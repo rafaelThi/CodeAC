@@ -1,15 +1,16 @@
-let command = "create table author (id number, name string, age number, city string, state string, country string)";
+let command = "create table author (id number, name string, age number, city string, state string, country string)";//comando que vem
 
-let regExp = /create table (\w)+ (\w+)/;
+let regExp = /create table (\w)+ (\w+)/;//trasforma esse comando em uma regExp, para trabalhae ele
 
-let busca = command.match("author")
+let busca = command.match("author")//buscando o autor
 
-let columns = command.match("(id number, name string, age number, city string, state string, country string)")
+let columns = command.match("(id number, name string, age number, city string, state string, country string)")//buscando colunas
 
-busca = busca[0]
+busca = busca[0]//pegando do array
 
-columns = columns[1].split(",");
+columns = columns[1].split(",");//pegando do array e separando
 
+//mostrando
 console.log(command)
 
 console.log("tableName = ",busca);

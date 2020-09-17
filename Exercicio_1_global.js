@@ -6,7 +6,7 @@ let busca = command.match( regexp )//buscando o autor
 
 let tableName = busca[1]
 
-let columns = command.match(regexp)
+let columns = command.match(regexp)//buscando as colunas
 
 columns = columns[2].split(",");
 

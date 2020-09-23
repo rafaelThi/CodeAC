@@ -1,3 +1,9 @@
+//
+const DataBaseError = function(command, message){
+    this.command =command;
+    this.message =  message;
+}
+//
 
 const database = {
     tables: {},
@@ -32,8 +38,20 @@ for (column of columns){
             if (command.startsWith("create table")){
             return this.createTable(command)
             }
+
+            //
+            const message = `Syntax error: "${command}`
+            throw new DataBaseError (command, message)
+            //
+            
         }
 };
-
+try {
 database.createTable("create table author (id number, name string, age number, city string, state string, country string)");
- console.log(JSON.stringify(database, undefined, "   "));
+//
+// database.execute("select id, name from author")
+//
+console.log(JSON.stringify(database, undefined, "   "));
+} catch(e) {
+    console.error(e.message)
+}

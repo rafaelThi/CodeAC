@@ -5,21 +5,37 @@ const DataBaseError = function(command, message){
 }
 //
 
+const Parser = function () {
+    const controls = new Map();
+    controls.set("createTable", /create table (\w+) \((.+)\)/)
+    controls.set("insert", /insert into (\w+) \((.+)\) values \((.+)\)/)
+    controls.set("select", /select (.+) from (\w+)(?: where (.+))?/)
+    controls.set("delete", /delete from (\w+)(?: where (.+))?/)
+
+    this.parse = function(command){
+        for (let [control, regexp] of controls ){
+            const parsedCommand = command.match(regexp)
+            if (parsedCommand){
+                return {
+                    control,
+                    parsedCommand,           
+                }
+            }
+        }
+    }
+}
+
 const database = {
     tables: {},
-        createTable(command){
-                    
-                    let regexp = /create table (\w+) \((.+)\)/;
-                    let busca = command.match( regexp )
-                    let [, tableName] = busca
+    parser: new Parser(),
+        createTable(parsedCommand){
+                    let [, tableName, columns] = parsedCommand
                    this.tables[tableName] = {
                         columns:{},
             
                     data: []
                     }
-
-    let columns = command.match(regexp)
-    columns = columns[2].split(", ");
+    columns = columns.split(", ");
 
     for (column of columns){
     coluns = column.split(" ");
@@ -32,14 +48,11 @@ const database = {
 
 }
         
-    },
-        insert(command){
-
-            const regexp = /insert into (\w+) \((.+)\) values \((.+)\)/; 
-            const parteCommand = command.match(regexp);
-            let tableName = parteCommand[1]
-            let columns = parteCommand[2]
-            let values = parteCommand[3]
+        },
+        insert(parsedCommand){
+            let tableName = parsedCommand[1]
+            let columns = parsedCommand[2]
+            let values = parsedCommand[3]
 
             columns = columns.split(", ");
             values = values.split(", ");
@@ -57,11 +70,8 @@ const database = {
             // console.log(command)
 
         },
-        select(command){
-            let regexp = /select (.+) from (\w+)(?: where (.+))?/
-            let selected = command.match(regexp)
-
-            let [,columns, tableName, whereClause] = selected;//pegando nome das colunas
+        select(parsedCommand){
+            let [,columns, tableName, whereClause] = parsedCommand;//pegando nome das colunas
              //pegando nome da tabela
             //pegando o where
             columns = columns.split(", ")//separando nome das colunas
@@ -90,10 +100,8 @@ const database = {
             
 
         },
-        delete(command){
-            const regexp = /delete from (\w+)(?: where (.+))?/
-            const dlt = command.match(regexp);
-            let [, tableName, whereClause]= dlt
+        delete(parsedCommand){
+            let [, tableName, whereClause]= parsedCommand
            if (whereClause){
                 let [columnWhere, valueWhere] = whereClause.split(" = ")
                 this.tables[tableName].data = this.tables[tableName].data.filter((row)=>{
@@ -103,22 +111,14 @@ const database = {
                 this.tables[tableName].data=[];
             }      
         
-            },
+        },
         execute(command){
-            if (command.startsWith("create table")){
-                return this.createTable(command)
+            const result = this.parser.parse(command)
+            if(result) {
+                return( 
+                    this[result.control] (result.parsedCommand)
+                )
             }
-            if (command.startsWith("insert")){
-                return this.insert(command)
-            }
-            if (command.startsWith("select")){
-                return this.select(command)
-            }
-            if (command.startsWith("delete")){
-                return this.delete(command)
-            }
-            
-
             //
             const message = `Syntax error: "${command}`
             throw new DataBaseError (command, message)
@@ -126,48 +126,14 @@ const database = {
             
         }
 };
-try {
 
+try {
     database.execute("create table author (id number, name string, age number, city string, state string, country string)");
     database.execute("insert into author (id, name, age) values (1, Douglas Crockford, 62)");
     database.execute("insert into author (id, name, age) values (2, Linus Torvalds, 47)");
     database.execute("insert into author (id, name, age) values (3, Martin Fowler, 54)");
-
-    database.execute("delete from author");
-
-    // database.execute("select name, age from author");
-
-    console.log(JSON.stringify(database.execute("select name, age from author"), undefined, " "))
-
-
-    // console.log(JSON.stringify(database.execute("select name, age from author where id = 1"), undefined, " "))
-
-
-    // database.execute("select name, age from author where id = 1");
-
-
-
-// //insert
-//     database.execute("create table author (id number, name string, age number, city string, state string, country string)");
-
-
-//     database.execute("insert into author (id, name, age) values (1, Douglas Crockford, 62)");
-//     database.execute("insert into author (id, name, age) values (2, Linus Torvalds, 47)");
-//     database.execute("insert into author (id, name, age) values (3, Martin Fowler, 54)");
-
-
-
-////create
-// database.createTable("create table author (id number, name string, age number, city string, state string, country string)");
-// //
-// database.execute("select id, name from author")
-// //
-
-
-
-// console.log(JSON.stringify(database, undefined, "   "));
-
-
-} catch(e) {
-    console.error(e.message)
+    database.execute("delete from author where id = 2");
+    console.log(JSON.stringify(database.execute("select name, age from author"), undefined, "  "));
+} catch (e) {
+    console.log(e.message);
 }

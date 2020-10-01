@@ -1,19 +1,23 @@
 //
-const DataBaseError = function(command, message){
-    this.command =command;
-    this.message =  message;
+class DataBaseError {
+    constructor(command, message){
+        this.command =command;
+        this.message =  message;
+    }
 }
 //
 
-const Parser = function () {
-    const controls = new Map();
-    controls.set("createTable", /create table (\w+) \((.+)\)/)
-    controls.set("insert", /insert into (\w+) \((.+)\) values \((.+)\)/)
-    controls.set("select", /select (.+) from (\w+)(?: where (.+))?/)
-    controls.set("delete", /delete from (\w+)(?: where (.+))?/)
+class Parser {
+    constructor(){
+    this.controls = new Map();
+    this.controls.set("createTable", /create table (\w+) \((.+)\)/)
+    this.controls.set("insert", /insert into (\w+) \((.+)\) values \((.+)\)/)
+    this.controls.set("select", /select (.+) from (\w+)(?: where (.+))?/)
+    this.controls.set("delete", /delete from (\w+)(?: where (.+))?/)
+    }
 
-    this.parse = function(command){
-        for (let [control, regexp] of controls ){
+    parse (command){
+        for (let [control, regexp] of this.controls ){
             const parsedCommand = command.match(regexp)
             if (parsedCommand){
                 return {
@@ -24,10 +28,16 @@ const Parser = function () {
         }
     }
 }
+//
+let column;
+let coluns;
+//
 
-const database = {
-    tables: {},
-    parser: new Parser(),
+class Database {
+   constructor(){
+        this.tables = {}
+        this.parser = new Parser()
+    }
         createTable(parsedCommand){
                     let [, tableName, columns] = parsedCommand
                    this.tables[tableName] = {
@@ -48,7 +58,7 @@ const database = {
 
 }
         
-        },
+        }
         insert(parsedCommand){
             let tableName = parsedCommand[1]
             let columns = parsedCommand[2]
@@ -69,7 +79,7 @@ const database = {
             // console.log(tableName, columns, values)
             // console.log(command)
 
-        },
+        }
         select(parsedCommand){
             let [,columns, tableName, whereClause] = parsedCommand;//pegando nome das colunas
              //pegando nome da tabela
@@ -80,13 +90,13 @@ const database = {
             if(whereClause){
                 const [columnWhere, valueWhere] = whereClause.split(" = ");
                 console.log(whereClause)
-                rows = rows.filter((row)=>{
+                rows = rows.filter(function(row){
                     return row[columnWhere] === valueWhere;
                 })
         };
-            rows = rows.map((row) => {//percorrendo o array
+            rows = rows.map(function(row) {//percorrendo o array
                 let selectedRow = {}//popular o objeto
-                columns.forEach((column)=>{
+                columns.forEach(function(column){
                     selectedRow[column] = row[column]
 
                 })
@@ -99,19 +109,19 @@ const database = {
             return rows;
             
 
-        },
+        }
         delete(parsedCommand){
             let [, tableName, whereClause]= parsedCommand
            if (whereClause){
                 let [columnWhere, valueWhere] = whereClause.split(" = ")
-                this.tables[tableName].data = this.tables[tableName].data.filter((row)=>{
+                this.tables[tableName].data = this.tables[tableName].data.filter(function(row){
                     return row[columnWhere] !== valueWhere;
                 })
             }else{
                 this.tables[tableName].data=[];
             }      
         
-        },
+        }
         execute(command){
             const result = this.parser.parse(command)
             if(result) {
@@ -128,6 +138,7 @@ const database = {
 };
 
 try {
+    const database = new Database();
     database.execute("create table author (id number, name string, age number, city string, state string, country string)");
     database.execute("insert into author (id, name, age) values (1, Douglas Crockford, 62)");
     database.execute("insert into author (id, name, age) values (2, Linus Torvalds, 47)");
